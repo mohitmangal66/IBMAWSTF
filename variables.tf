@@ -1,6 +1,6 @@
 variable resource_group {
   description = "Name of resource group to provision resources"
-  default     = "default"
+  default     = "Default"
 }
 
 variable "ibmcloud_region" {
@@ -9,7 +9,7 @@ variable "ibmcloud_region" {
 }
 
 variable "vpc_name" {
-  default = "default"
+  default = "ibmvpc"
   description = "Name of your VPC"
 }
 
@@ -34,7 +34,7 @@ variable "zone2_cidr" {
 }
 
 variable "ssh_key_name" {
-  default = "primary"
+  default = "ibmawskey"
   description = "Name of an SSH key to create"
 }
 
