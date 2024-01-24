@@ -96,3 +96,77 @@ resource "ibm_is_security_group_rule" "sg1_tcp_rule_80" {
 }
 
 
+
+##############################################################################
+# VPN Gateways
+##############################################################################
+
+resource "ibm_is_vpn_gateway" "ibm_aws_vpn_gw_zone_1" {
+  name           = "ibm-aws-vpn-gw-1"
+  subnet         = ibm_is_subnet.subnet1.id
+  resource_group = data.ibm_resource_group.rg.id
+  mode           = "policy"
+  tags = []
+  timeouts {
+    delete = "1h"
+  }
+}
+
+resource "ibm_is_vpn_gateway_connection" "ibm_aws_vpn_gw_zone_1_conn" {
+  name          = "ibm-aws-conn-1"
+  vpn_gateway   = ibm_is_vpn_gateway.ibm_aws_vpn_gw_zone_1.id
+  peer_address  = var.peer_ip_address
+  preshared_key = var.homelab_conn1_preshared_key
+  ike_policy    = ibm_is_ike_policy.homelab_ike_policy.id
+  ipsec_policy  = ibm_is_ipsec_policy.homelab_ipsec_policy.id
+  local_cidrs = [
+    "172.16.0.0/18"
+  ]
+  peer_cidrs = [
+    "192.168.0.0/16"
+  ]
+}
+
+resource "ibm_is_vpn_gateway" "ibm_aws_vpn_gw_zone_2" {
+  name           = "ibm-aws-vpn-gw-2"
+  subnet         = ibm_is_subnet.subnet2.id
+  resource_group = data.ibm_resource_group.rg.id
+  mode           = "policy"
+  tags = []
+  timeouts {
+    delete = "1h"
+  }
+}
+
+resource "ibm_is_vpn_gateway_connection" "ibm_aws_vpn_gw_zone_2_conn" {
+  name          = "ibm-aws-conn-2"
+  vpn_gateway   = ibm_is_vpn_gateway.ibm_aws_vpn_gw_zone_2.id
+  peer_address  = var.peer_ip_address
+  preshared_key = var.homelab_conn1_preshared_key
+  ike_policy    = ibm_is_ike_policy.homelab_ike_policy.id
+  ipsec_policy  = ibm_is_ipsec_policy.homelab_ipsec_policy.id
+  local_cidrs = [
+    "172.16.64.0/18"
+  ]
+  peer_cidrs = [
+    "192.168.0.0/16"
+  ]
+}
+
+resource "ibm_is_ipsec_policy" "ibm_aws_ipsec_policy" {
+  name                     = "ibm-aws-ipsec-policy"
+  authentication_algorithm = "sha256"
+  encryption_algorithm     = "aes256"
+  pfs                      = "disabled"
+}
+
+resource "ibm_is_ike_policy" "ibm_aws_ike_policy" {
+  name                     = "ibm-aws-ike-policy"
+  authentication_algorithm = "sha256"
+  encryption_algorithm     = "aes256"
+  dh_group                 = 14
+  ike_version              = 2
+}
+
+##############################################################################
+
