@@ -1,3 +1,8 @@
+variable "ibmcloud_api_key" {
+  description = "the IBM Cloud API key"
+  default = ""
+}
+
 variable resource_group {
   description = "Name of resource group to provision resources"
   default     = "Default"
@@ -44,7 +49,7 @@ variable "ssh_public_key" {
 }
 
 variable "image" {
-  default = "r006-14140f94-fcc4-11e9-96e7-a72723715315"
+  default = "r006-c065ea33-4694-46ac-a0c5-e59cb89a7f9e"
   description = "OS Image ID to be used for virtual instances"
 }
 
@@ -160,4 +165,8 @@ variable "aws_instance_1_name" {
 variable "aws_instance_2_name" {
   default = "instance_b"
   description = "Name of the second AWS instance"
+}
+
+variable "preshared_key" {
+  description = "the preshared key for the IPSEC tunnel"
 }

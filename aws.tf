@@ -76,7 +76,7 @@ resource "aws_security_group" "allow_traffic" {
   }
 
   ingress {
-    description      = "HTTPS"
+    description      = "HTTP"
     from_port        = 80
     to_port          = 80
     protocol         = "tcp"
@@ -84,10 +84,18 @@ resource "aws_security_group" "allow_traffic" {
   }
 
   ingress {
-    description      = "HTTPS"
+    description      = "SSH"
     from_port        = 22
     to_port          = 22
     protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+  
+  ingress {
+    description      = "PING"
+    from_port        = -1
+    to_port          = -1
+    protocol         = "icmp"
     cidr_blocks      = ["0.0.0.0/0"]
   }
 
@@ -165,4 +173,76 @@ resource "aws_instance" "b" {
   tags = {
     Name = var.aws_instance_2_name
   }
+}
+
+
+resource "aws_customer_gateway" "ibm_cloud_zone1_a" {
+  bgp_asn    = 65000
+  ip_address = ibm_is_vpn_gateway.ibm_aws_vpn_gw_zone_1.members[0].address
+  type       = "ipsec.1"
+  device_name = "ibm_cloud_zone1_a"
+}
+
+resource "aws_customer_gateway" "ibm_cloud_zone1_b" {
+  bgp_asn    = 65000
+  ip_address = ibm_is_vpn_gateway.ibm_aws_vpn_gw_zone_1.members[1].address
+  type       = "ipsec.1"
+  device_name = "ibm_cloud_zone1_b"
+}
+
+resource "aws_vpn_gateway" "ibm_cloud_zone1" {
+  vpc_id = aws_vpc.main.id
+}
+
+resource "aws_vpn_gateway_attachment" "vpngw_attachment" {
+  vpc_id         = aws_vpc.main.id
+  vpn_gateway_id = aws_vpn_gateway.ibm_cloud_zone1.id
+}
+
+resource "aws_vpn_gateway_route_propagation" "routepropagation" {
+  vpn_gateway_id = aws_vpn_gateway.ibm_cloud_zone1.id
+  route_table_id = aws_route_table.main-route-table.id
+}
+
+# Create a connection to IBM Cloud Zone 1 A side
+resource "aws_vpn_connection" "ibm_cloud_zone1_a" {
+  vpn_gateway_id      = aws_vpn_gateway.ibm_cloud_zone1.id
+  customer_gateway_id = aws_customer_gateway.ibm_cloud_zone1_a.id
+  type                = "ipsec.1"
+  static_routes_only  = true
+  tunnel1_preshared_key = var.preshared_key
+  tunnel2_preshared_key = var.preshared_key
+}
+
+#create static route to the on-premise network on the AWS VPN side
+resource "aws_vpn_connection_route" "ibm_cloud_zone1_a" {
+  destination_cidr_block = var.zone1_cidr
+  vpn_connection_id      = aws_vpn_connection.ibm_cloud_zone1_a.id
+}
+
+#create static route to the on-premise network on the AWS VPN side
+resource "aws_vpn_connection_route" "ibm_cloud_zone2_a" {
+  destination_cidr_block = var.zone2_cidr
+  vpn_connection_id      = aws_vpn_connection.ibm_cloud_zone1_a.id
+}
+
+# Create a connection to IBM Cloud Zone 1 B side
+resource "aws_vpn_connection" "ibm_cloud_zone1_b" {
+  vpn_gateway_id      = aws_vpn_gateway.ibm_cloud_zone1.id
+  customer_gateway_id = aws_customer_gateway.ibm_cloud_zone1_b.id
+  type                = "ipsec.1"
+  static_routes_only  = true
+  tunnel1_preshared_key = var.preshared_key
+  tunnel2_preshared_key = var.preshared_key
+}
+
+#create static route to the on-premise network on the AWS VPN side
+resource "aws_vpn_connection_route" "ibm_cloud_zone1_b" {
+  destination_cidr_block = var.zone1_cidr
+  vpn_connection_id      = aws_vpn_connection.ibm_cloud_zone1_b.id
+}
+#create static route to the on-premise network on the AWS VPN side
+resource "aws_vpn_connection_route" "ibm_cloud_zone2_b" {
+  destination_cidr_block = var.zone2_cidr
+  vpn_connection_id      = aws_vpn_connection.ibm_cloud_zone1_b.id
 }
